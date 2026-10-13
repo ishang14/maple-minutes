@@ -1,6 +1,6 @@
 // Fixed colour per party / domain: colour follows the entity, so filtering never repaints the
 // series that remain. The slot ORDER below is the order that passed the palette validator.
-export const PARTY_ORDER = ['NDP', 'Conservative', 'Bloc Québécois', 'Liberal', 'Green Party']
+const PARTY_ORDER = ['NDP', 'Conservative', 'Bloc Québécois', 'Liberal', 'Green Party']
 
 const PARTY_VAR = {
   NDP: '--c-ndp',
@@ -22,7 +22,7 @@ export const DOMAIN_LABELS = {
   finance_economy: 'Finance, economy and taxation',
 }
 
-export const DOMAIN_ORDER = ['finance_economy', 'law_security', 'foreign_relations']
+const DOMAIN_ORDER = ['finance_economy', 'law_security', 'foreign_relations']
 
 /** CSS colour for a series key (a party name, a domain id, or "all"). */
 export function seriesColor(key) {

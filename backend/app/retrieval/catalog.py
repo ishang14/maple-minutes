@@ -20,6 +20,12 @@ DOMAIN_LABELS = {
 }
 
 
+def _bill_key(bill: str) -> tuple[str, int]:
+    """C-2 before C-10: sort by chamber letter, then number."""
+    letter, _, num = bill.partition("-")
+    return letter, int(num) if num.isdigit() else 0
+
+
 def _months(first: str, last: str) -> list[str]:
     return [p.strftime("%Y-%m") for p in pd.period_range(first, last, freq="M")]
 
@@ -49,6 +55,7 @@ class Catalog:
         return {
             "parties": sorted(df["party"].dropna().unique().tolist()),
             "parliaments": sorted(int(p) for p in df["parliament"].dropna().unique()),
+            "bills": sorted(df["bill"].dropna().unique(), key=_bill_key),
             "date_min": df["date"].min(),
             "date_max": df["date"].max(),
             "domains": [{"id": k, "label": v} for k, v in DOMAIN_LABELS.items()],

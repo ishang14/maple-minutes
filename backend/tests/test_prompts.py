@@ -28,7 +28,8 @@ def test_prompt_numbers_excerpts_and_carries_attribution():
 
 
 def test_system_prompt_enforces_the_required_rules():
-    for needle in ("ONLY", "[1]", "don't cover this", "Never invent", "neutral", "party", "quoting or"):
+    for needle in ("ONLY", "[1]", "don't cover this", "Never invent", "neutral", "party", "quoting or",
+                   "only report what was said", "cannot define", "begin every sentence or bullet"):
         assert needle.lower() in SYSTEM_PROMPT.lower().replace("\\", ""), needle
 
 
@@ -89,3 +90,58 @@ def test_ellipsis_checks_each_segment_and_short_spans_are_ignored():
     bad = 'He said “they try to dress it up ... and then invented words here” [1].'
     assert len(check_quotes(bad, SOURCES)) == 1
     assert check_quotes('The so-called “carbon tax” [1] and "net zero" [2].', SOURCES) == []
+
+
+def test_unicode_spaces_in_a_quote_do_not_cause_a_false_alarm():
+    # LLMs sometimes emit a narrow no-break space (U+202F) or NBSP where the source has a plain space
+    source = ["Hamas murdered thousands on October 7 in a massacre."]
+    answer = "She said “murdered thousands on October 7 in a massacre” [1]."
+    assert check_quotes(answer, source) == []
+    assert len(check_quotes("She said “murdered thousands on October 8 in a massacre” [1].", source)) == 1
+
+
+def test_stray_spaces_before_percent_and_hyphens_inside_words_are_tolerated():
+    source = ["Aiming for a 50% fee reduction, we ask the wealthiest to pay a little more."]
+    ok = ('He said “aiming for a 50 % fee reduction” [1] and '
+          '“ask the wealth‑iest to pay a little more” [1].')
+    assert check_quotes(ok, source) == []
+    # real alterations are still caught
+    bad = 'He said “aiming for a 60% fee reduction” [1].'
+    assert len(check_quotes(bad, source)) == 1
+
+
+def test_full_width_bracket_citations_are_understood():
+    assert check_citations("Epilepsy is common \u30101\u3011 and costly [2].", 2) == ([1, 2], [])
+    assert check_citations("Bad \u30109\u3011.", 2) == ([], [9])
+    # a quote followed by a full-width citation is still checked against the right excerpt
+    source = ["Epilepsy is one of the most widespread neurological diseases."]
+    ok = 'She called it \u201cone of the most widespread neurological diseases\u201d\u30101\u3011.'
+    assert check_quotes(ok, source) == []
+    bad = 'She called it \u201cone of the rarest neurological diseases\u201d\u30101\u3011.'
+    assert check_quotes(bad, source) == [{"quote": "one of the rarest neurological diseases", "cited": [1]}]
+
+
+def test_definition_questions_become_what_have_mps_said_suggestions():
+    from app.prompts import EXAMPLE_QUESTIONS, suggest_questions
+
+    cases = {
+        "What is epilepsy?": "What have MPs said about epilepsy?",
+        "Define inflation": "What have MPs said about inflation?",
+        "Explain how pharmacare works": "What have MPs said about pharmacare?",
+        "What does inflation mean?": "What have MPs said about inflation?",
+        "Who is the Prime Minister?": "What have MPs said about the Prime Minister?",
+        "Tell me about NATO": "What have MPs said about NATO?",
+        "How does a vaccine work?": "What have MPs said about vaccine?",
+        "How does the carbon rebate work?": "What have MPs said about the carbon rebate?",
+    }
+    for question, expected in cases.items():
+        assert suggest_questions(question) == [expected], question
+    # ordinary questions need no rewrite
+    assert suggest_questions("What did parties say about the carbon tax?") == []
+    assert suggest_questions("How did MPs vote on Bill C-21?") == []
+    assert suggest_questions("How do I bake sourdough bread?") == []  # about the asker, not a topic
+    assert suggest_questions("What do I need to know about the budget?") == []
+    # a refused question also gets curated examples, three suggestions in all
+    refused = suggest_questions("What is epilepsy?", out_of_scope=True)
+    assert refused == ["What have MPs said about epilepsy?", *EXAMPLE_QUESTIONS[:2]]
+    assert suggest_questions("Tell me a joke.", out_of_scope=True) == EXAMPLE_QUESTIONS[:3]

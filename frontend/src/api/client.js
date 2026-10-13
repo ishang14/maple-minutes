@@ -1,6 +1,6 @@
 // Thin client for the MapleMinutes backend. Every function takes an optional AbortSignal.
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/+$/, '')
+const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000').replace(/\/+$/, '')
 
 export class ApiError extends Error {
   constructor(message, status) {
@@ -16,7 +16,6 @@ const FRIENDLY = {
 }
 
 async function errorFromResponse(res) {
-  if (FRIENDLY[res.status]) return new ApiError(FRIENDLY[res.status], res.status)
   let detail = ''
   try {
     const body = await res.json()
@@ -25,6 +24,9 @@ async function errorFromResponse(res) {
   } catch {
     /* no JSON body */
   }
+  // A rate-limit reply says how long to wait ("try again in 8 minutes"), so show the server's own words.
+  if (res.status === 429) return new ApiError(detail || FRIENDLY[429], 429)
+  if (FRIENDLY[res.status]) return new ApiError(FRIENDLY[res.status], res.status)
   return new ApiError(detail || `The server returned an error (HTTP ${res.status}).`, res.status)
 }
 
@@ -87,7 +89,7 @@ export function getTrend({ query, groupBy = 'none', filters = {} }, opts) {
   })
 }
 
-export async function postJson(path, body, { signal } = {}) {
+async function postJson(path, body, { signal } = {}) {
   const res = await doFetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

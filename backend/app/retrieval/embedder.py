@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import lru_cache
 
 import numpy as np
 
@@ -55,7 +54,3 @@ class Embedder:
         e = next(iter(self._sparse_model().query_embed(query)))
         return Sparse(e.indices.tolist(), e.values.tolist())
 
-
-@lru_cache(maxsize=1)
-def get_embedder() -> Embedder:
-    return Embedder()

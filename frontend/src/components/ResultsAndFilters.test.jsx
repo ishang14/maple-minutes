@@ -41,6 +41,7 @@ describe('ResultsList', () => {
 const OPTIONS = {
   parties: ['Conservative', 'Liberal'],
   parliaments: [43, 44, 45],
+  bills: ['C-2', 'C-21', 'S-3'],
   date_min: '2019-12-05',
   date_max: '2026-10-09',
   domains: [{ id: 'law_security', label: 'Law, justice and national security' }],
@@ -122,5 +123,36 @@ describe('FilterPanel', () => {
     await userEvent.type(screen.getByRole('combobox', { name: 'Member of Parliament' }), 'a')
     await new Promise((r) => setTimeout(r, 400))
     expect(fetchSpeakers).not.toHaveBeenCalled()
+  })
+
+  it('offers the real bill numbers as suggestions', () => {
+    const { container } = render(<PanelHarness fetchSpeakers={vi.fn()} />)
+    const options = [...container.querySelectorAll('#bill-options option')].map((o) => o.value)
+    expect(options).toEqual(['C-2', 'C-21', 'S-3'])
+    expect(screen.getByLabelText('Bill')).toHaveAttribute('list', 'bill-options')
+  })
+
+  it('tidies a typed bill number when the field loses focus', async () => {
+    const onChange = vi.fn()
+    render(<PanelHarness fetchSpeakers={vi.fn()} onChange={onChange} />)
+    await userEvent.type(screen.getByLabelText('Bill'), 'bill c21')
+    await userEvent.tab()
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ bill: 'C-21' }))
+    expect(screen.getByLabelText('Bill')).toHaveValue('C-21')
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('flags something that is not a bill number instead of ignoring it', async () => {
+    render(<PanelHarness fetchSpeakers={vi.fn()} />)
+    await userEvent.type(screen.getByLabelText('Bill'), 'carbon')
+    expect(screen.getByRole('alert')).toHaveTextContent('Use a bill number such as C-21')
+    expect(screen.getByLabelText('Bill')).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('Reset filters clears the bill too', async () => {
+    render(<PanelHarness fetchSpeakers={vi.fn()} />)
+    await userEvent.type(screen.getByLabelText('Bill'), 'C-5')
+    await userEvent.click(screen.getByRole('button', { name: 'Reset filters' }))
+    expect(screen.getByLabelText('Bill')).toHaveValue('')
   })
 })

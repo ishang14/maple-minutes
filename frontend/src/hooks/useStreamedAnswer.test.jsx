@@ -167,4 +167,28 @@ describe('useStreamedAnswer', () => {
     expect(result.current.status).toBe('idle')
     expect(result.current.text).toBe('')
   })
+
+  it('keeps the out-of-scope flag and the suggested questions from the done event', async () => {
+    const stream = fake([
+      { event: 'sources', data: { sources: [] } },
+      { event: 'token', data: { text: 'I could not find anything related.' } },
+      { event: 'done', data: { cited: [], out_of_scope: true, suggestions: ['What have MPs said about epilepsy?'] } },
+    ])
+    const { result } = renderHook(() => useStreamedAnswer(stream))
+    await act(() => result.current.ask({ query: 'What is epilepsy?' }))
+    expect(result.current).toMatchObject({
+      status: 'done',
+      outOfScope: true,
+      suggestions: ['What have MPs said about epilepsy?'],
+    })
+  })
+
+  it('defaults to in scope with no suggestions when the server sends neither', async () => {
+    const stream = fake([{ event: 'done', data: { cited: [] } }])
+    const { result } = renderHook(() => useStreamedAnswer(stream))
+    await act(() => result.current.ask({ query: 'x' }))
+    expect(result.current.outOfScope).toBe(false)
+    expect(result.current.suggestions).toEqual([])
+  })
 })
+

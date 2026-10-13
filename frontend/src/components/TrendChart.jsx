@@ -51,10 +51,10 @@ function Legend({ keys }) {
 
 function DataTable({ rows, keys, measure }) {
   return (
-    <div className="max-h-72 overflow-auto rounded-md border border-neutral-200 dark:border-neutral-800">
+    <div className="max-h-72 overflow-auto rounded-xl border border-line">
       <table className="w-full text-xs">
         <caption className="sr-only">Monthly values behind the chart</caption>
-        <thead className="sticky top-0 bg-neutral-100 dark:bg-neutral-800">
+        <thead className="sticky top-0 bg-tint text-tintink">
           <tr>
             <th scope="col" className="px-2 py-1.5 text-left font-medium">Month</th>
             {keys.map((k) => (
@@ -65,7 +65,7 @@ function DataTable({ rows, keys, measure }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.month} className="border-t border-neutral-200 dark:border-neutral-800">
+            <tr key={r.month} className="border-t border-line transition-colors hover:bg-surface2">
               <th scope="row" className="px-2 py-1 text-left font-normal">{monthLabel(r.month, true)}</th>
               {keys.map((k) => (
                 <td key={k} className="px-2 py-1 text-right tabular-nums">{fmtValue(r[k], measure)}</td>
@@ -103,43 +103,43 @@ export default function TrendChart({ query, filters, fetchTrend = getTrend }) {
   const empty = !state.loading && !state.error && rows.length === 0
 
   return (
-    <section aria-labelledby="trend-title" className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+    <section aria-labelledby="trend-title" className="rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 id="trend-title" className="text-base font-semibold">
+          <h2 id="trend-title" className="font-serif text-xl font-medium tracking-tight text-ink">
             {query ? `“${query}” over time` : 'Debate volume over time'}
           </h2>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400">
+          <p className="mt-1 text-xs text-muted">
             {measure === 'share' ? 'Share of speeches each month' : 'Speeches per month'} containing most of the words
             in your search, within the selected filters.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs">
           <select aria-label="Split by" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}
-            className="rounded-md border border-neutral-300 bg-white px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900">
+            className="rounded-lg border border-line bg-surface2 px-2.5 py-1.5 text-ink outline-none transition hover:border-linestrong focus:border-brand focus:ring-4 focus:ring-brand/15">
             {GROUPS.map((g) => (
               <option key={g.id} value={g.id}>{g.label}</option>
             ))}
           </select>
           <select aria-label="Measure" value={measure} onChange={(e) => setMeasure(e.target.value)}
-            className="rounded-md border border-neutral-300 bg-white px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900">
+            className="rounded-lg border border-line bg-surface2 px-2.5 py-1.5 text-ink outline-none transition hover:border-linestrong focus:border-brand focus:ring-4 focus:ring-brand/15">
             <option value="count">Count</option>
             <option value="share">Share of speeches</option>
           </select>
           <button type="button" onClick={() => setAsTable((t) => !t)} aria-pressed={asTable}
-            className="rounded-md border border-neutral-300 px-2 py-1 font-medium dark:border-neutral-700">
+            className="rounded-lg border border-line bg-surface2 px-3 py-1.5 font-medium text-ink transition hover:border-linestrong hover:bg-tint aria-pressed:border-brand aria-pressed:bg-tint">
             {asTable ? 'Show chart' : 'Show table'}
           </button>
         </div>
       </div>
 
       {state.error && (
-        <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-200">
+        <p role="alert" className="rounded-xl bg-dangertint p-3 text-sm text-danger">
           Could not load the trend. {state.error}
         </p>
       )}
-      {empty && <p className="py-10 text-center text-sm text-neutral-600 dark:text-neutral-400">No speeches match these filters.</p>}
-      {state.loading && !state.data && <p role="status" className="py-10 text-center text-sm text-neutral-600">Loading trend…</p>}
+      {empty && <p className="py-10 text-center text-sm text-muted">No speeches match these filters.</p>}
+      {state.loading && !state.data && <div role="status" className="space-y-3 py-6"><p className="text-center text-sm text-muted">Loading trend…</p><div className="skeleton h-48 w-full" /></div>}
 
       {rows.length > 0 && (
         <div className={state.loading ? 'opacity-50 transition-opacity' : 'transition-opacity'} aria-busy={state.loading}>
@@ -148,7 +148,7 @@ export default function TrendChart({ query, filters, fetchTrend = getTrend }) {
             <DataTable rows={rows} keys={keys} measure={measure} />
           ) : (
             <div role="img" aria-label={`Line chart of monthly speeches, ${monthLabel(rows[0].month, true)} to ${monthLabel(rows.at(-1).month, true)}. Use the table view for exact values.`}
-              className="h-64 w-full sm:h-72" style={{ background: 'var(--viz-surface)' }}>
+              className="h-64 w-full sm:h-72">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <LineChart data={rows} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
                   <CartesianGrid vertical={false} stroke="var(--viz-grid)" strokeWidth={1} />

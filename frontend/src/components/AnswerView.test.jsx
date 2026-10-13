@@ -41,6 +41,37 @@ describe('AnswerView citations', () => {
     expect(screen.getAllByRole('list')).toHaveLength(1)
   })
 
+  it('understands full-width bracket citations such as \u30101\u3011', async () => {
+    const onCite = vi.fn()
+    view({ text: 'Epilepsy is described as widespread \u30101\u3011.', onCite })
+    const chip = screen.getByRole('button', { name: /Source 1/ })
+    expect(chip).toHaveTextContent('1')
+    expect(screen.queryByText(/\u3010/)).not.toBeInTheDocument()
+    await userEvent.click(chip)
+    expect(onCite).toHaveBeenCalledWith(1)
+  })
+
+  it('shows narrow and no-break spaces as ordinary spaces so names do not run together', () => {
+    const { container } = view({ text: 'Mario\u202fBeaulieu and Ruby\u00a0Sahota spoke on October\u20097.' })
+    expect(container.textContent).toBe('Mario Beaulieu and Ruby Sahota spoke on October 7.')
+    expect(container.textContent).not.toMatch(/[\u00a0\u2009\u202f]/)
+  })
+
+  it('keeps punctuation after a chip on the same line as the chip', () => {
+    view({ text: 'Carbon pricing was defended [1]. And opposed [2], loudly [1][2].' })
+    const first = screen.getAllByRole('button')[0]
+    expect(first.parentElement).toHaveTextContent(/^1\.$/) // the full stop travels with its chip
+    expect(screen.getAllByRole('button')[1].parentElement).toHaveTextContent(/^2,$/)
+    expect(screen.getAllByRole("button")).toHaveLength(4)
+  })
+
+  it('renders *italic* text as emphasis without showing the asterisks', () => {
+    const { container } = view({ text: 'It was a *tax measure* rather than a plan. Also 2 * 3 stays.' })
+    expect(container.querySelector('em')).toHaveTextContent('tax measure')
+    expect(container).not.toHaveTextContent('*tax measure*')
+    expect(container).toHaveTextContent('2 * 3 stays')
+  })
+
   it('escapes HTML in the answer instead of rendering it', () => {
     view({ text: 'Say <img src=x onerror=alert(1)> **loud**' })
     expect(document.querySelector('img')).toBeNull()

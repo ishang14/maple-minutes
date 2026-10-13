@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import ask, filters, search
 from app.config import settings
 from app.deps import build_services
+from app.ratelimit import AskLimits
 
 
 @asynccontextmanager
@@ -27,12 +28,18 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.state.services = None
+    app.state.ask_limits = AskLimits(settings)
     for module in (search, ask, filters):
         app.include_router(module.router)
 
     @app.get("/health")
     def health():
-        return {"status": "ok", "index_loaded": app.state.services is not None}
+        services = app.state.services
+        info = {"status": "ok", "index_loaded": services is not None}
+        if services is not None:  # which retrieval setup is live (useful to confirm a deployment)
+            info["search_mode"] = services.retriever.mode
+            info["rerank"] = services.retriever.reranker is not None
+        return info
 
     return app
 

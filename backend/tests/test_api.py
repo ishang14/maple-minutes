@@ -21,12 +21,18 @@ def payload(i, text, **kw):
 
 
 class FakeRetriever:
-    def __init__(self, hits):
-        self.hits, self.calls = hits, []
+    mode = "dense"
+    reranker = None
+
+    def __init__(self, hits, relevance=0.8):
+        self.hits, self.relevance, self.calls = hits, relevance, []
 
     def retrieve(self, query, flt, top_n, **kw):
+        return self.retrieve_scored(query, flt, top_n, **kw)[0]
+
+    def retrieve_scored(self, query, flt, top_n, **kw):
         self.calls.append((query, flt, top_n))
-        return self.hits[:top_n]
+        return self.hits[:top_n], self.relevance
 
 
 class FakeLLM(LLMProvider):
@@ -42,11 +48,11 @@ class FakeLLM(LLMProvider):
             raise self.error
 
 
-def make_client(hits, llm=None):
+def make_client(hits, llm=None, relevance=0.8):
     catalog = Catalog(pd.DataFrame(
         [("2023-05-01", 44, "Liberal", "MP 1", None, ["finance_economy"], "carbon tax")],
         columns=["date", "parliament", "party", "speaker", "bill", "domains", "text"]))
-    retriever = FakeRetriever(hits)
+    retriever = FakeRetriever(hits, relevance)
     llm = llm or FakeLLM(["Carbon pricing was debated [1]."])
     app = create_app()
     app.state.services = Services(retriever, catalog, lambda: [llm])
@@ -68,7 +74,9 @@ HITS = [Hit(payload(1, "The carbon tax is a <b>burden</b>."), 0.9, 4.2),
 def test_health_reports_whether_the_index_is_loaded():
     assert TestClient(create_app()).get("/health").json() == {"status": "ok", "index_loaded": False}
     client, *_ = make_client(HITS)
-    assert client.get("/health").json()["index_loaded"] is True
+    # with an index loaded, health also says which retrieval setup is live
+    assert client.get("/health").json() == {"status": "ok", "index_loaded": True,
+                                            "search_mode": "dense", "rerank": False}
 
 
 def test_endpoints_answer_503_without_an_index():
@@ -108,7 +116,8 @@ def test_ask_streams_sources_then_tokens_then_done():
     assert [s["n"] for s in sources] == [1, 2]
     assert sources[0]["text"] and sources[0]["source_url"] and sources[0]["speaker"] == "MP 1"
     assert "".join(e[1]["text"] for e in ev if e[0] == "token").startswith("Carbon pricing was")
-    assert ev[-1][1] == {"cited": [1, 2], "invalid_citations": [7], "unverified_quotes": []}
+    assert ev[-1][1] == {"cited": [1, 2], "invalid_citations": [7], "unverified_quotes": [],
+                         "out_of_scope": False, "suggestions": []}
     # the LLM saw the numbered excerpts and the question
     user = llm.messages[1]["content"]
     assert "[1] MP 1 (Liberal, Ottawa Centre)" in user and "What was said about carbon" in user
@@ -160,3 +169,36 @@ def test_ask_reports_unverified_quotes_in_done_event():
     assert done[0] == "done" and done[1]["cited"] == [1, 2]
     assert done[1]["unverified_quotes"] == [
         {"quote": "the carbon tax is a wonderful burden", "cited": [1]}]
+
+
+def test_unrelated_question_is_refused_without_calling_the_llm(monkeypatch):
+    monkeypatch.setattr("app.api.ask.settings.min_relevance", 0.65)
+    llm = FakeLLM(["should never be called"])
+    client, retriever, _ = make_client(HITS, llm, relevance=0.55)
+    ev = events(client.post("/ask", json={"query": "How do I bake sourdough bread?"}))
+    assert [e[0] for e in ev] == ["sources", "token", "done"]
+    assert ev[0][1]["sources"] == []  # irrelevant excerpts are not shown
+    assert "couldn't find anything in the House of Commons debates" in ev[1][1]["text"]
+    assert ev[-1][1]["out_of_scope"] is True
+    assert len(ev[-1][1]["suggestions"]) == 3  # curated examples to try instead
+    assert llm.messages is None and retriever.calls  # retrieval ran, the LLM did not
+
+
+def test_the_guard_can_be_switched_off(monkeypatch):
+    monkeypatch.setattr("app.api.ask.settings.min_relevance", 0)
+    client, *_ = make_client(HITS, FakeLLM(["Answer [1]."]), relevance=0.1)
+    ev = events(client.post("/ask", json={"query": "carbon pricing"}))
+    assert ev[-1][0] == "done" and ev[-1][1]["out_of_scope"] is False
+
+
+def test_a_question_at_or_above_the_floor_goes_to_the_llm(monkeypatch):
+    monkeypatch.setattr("app.api.ask.settings.min_relevance", 0.65)
+    client, *_ = make_client(HITS, FakeLLM(["Answer [1]."]), relevance=0.65)
+    assert events(client.post("/ask", json={"query": "carbon pricing"}))[-1][1]["out_of_scope"] is False
+
+
+def test_definition_questions_get_a_rewrite_suggestion_with_the_answer(monkeypatch):
+    monkeypatch.setattr("app.api.ask.settings.min_relevance", 0.65)
+    client, *_ = make_client(HITS, FakeLLM(["I only report debates. Gill said it is widespread [1]."]))
+    done = events(client.post("/ask", json={"query": "What is epilepsy?"}))[-1][1]
+    assert done["suggestions"] == ["What have MPs said about epilepsy?"] and done["out_of_scope"] is False

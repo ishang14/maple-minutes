@@ -1,18 +1,19 @@
 export default function About() {
   return (
     <section
+      id="about"
       aria-labelledby="about-title"
-      className="rounded-xl border border-neutral-200 bg-white p-5 text-sm leading-relaxed dark:border-neutral-800 dark:bg-neutral-900"
+      className="scroll-mt-24 rounded-2xl border border-line bg-surface p-6 text-sm leading-7 text-ink shadow-card sm:p-8"
     >
-      <h2 id="about-title" className="text-base font-semibold">
+      <h2 id="about-title" className="font-serif text-2xl font-medium tracking-tight">
         About and limitations
       </h2>
-      <p className="mt-2">
+      <p className="mt-3 text-muted">
         MapleMinutes searches the House of Commons Hansard, the official record of debates, from the 43rd
         Parliament (December 2019) onward. Answers are written by an AI model from the speeches it retrieves,
         and every claim links back to the exact speech.
       </p>
-      <ul className="mt-3 list-disc space-y-1.5 pl-5">
+      <ul className="mt-4 list-disc space-y-2.5 pl-5 marker:text-gold">
         <li>
           <strong>AI can be wrong.</strong> It may paraphrase loosely, miss context, or misread irony. Open the
           numbered sources and check them before relying on or quoting anything. Quotation marks the app cannot
@@ -41,7 +42,7 @@ export default function About() {
           to 60 seconds.
         </li>
       </ul>
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <p className="mt-5 border-t border-line pt-4 text-xs text-muted">
         Source: House of Commons Hansard. Reproduced accurately and for non-commercial use under the House of
         Commons reproduction permission. This is not an official publication of the House of Commons.
       </p>

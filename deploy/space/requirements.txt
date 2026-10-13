@@ -1,0 +1,10 @@
+# Runtime dependencies of the API only (no data pipeline, evaluation, linters or test tools).
+# Pinned to the versions the test suite and the local index were verified with.
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic-settings==2.15.0
+pandas==3.0.6
+numpy==2.5.4
+fastembed==0.9.0
+qdrant-client==1.19.1
+httpx==0.28.1

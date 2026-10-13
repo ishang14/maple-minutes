@@ -1,20 +1,42 @@
 @import "tailwindcss";
 
 /*
-  Chart colours. Party hues come from the reference categorical palette and were checked with the
-  palette validator (both modes pass; the aqua/red pair is in the CVD warning band, so every chart
-  also ships a legend, an all-series tooltip and a table view). Dark values are the same hues
-  stepped for the dark surface, not an automatic flip. Colours follow the entity (party/domain), so
-  filtering never repaints the series that remain.
+  Design tokens. The look takes its cue from the House of Commons chamber: deep green, warm paper,
+  a restrained gold accent, and serif headings. Everything below the :root blocks refers to these
+  tokens, so light and dark mode are one set of values each (dark follows the system setting).
 */
 :root {
   color-scheme: light;
-  --viz-surface: #fcfcfb;
-  --viz-grid: #e7e6e2;
-  --viz-axis: #c9c8c2;
-  --viz-text: #0b0b0b;
-  --viz-text-2: #52514e;
-  --viz-text-3: #74736d;
+  --paper: #f6f2e9;
+  --surface: #fffdf8;
+  --surface-2: #f9f5ea;
+  --ink: #1c2420;
+  --muted: #56635b;
+  --faint: #86918a;
+  --line: #e6e0d1;
+  --line-strong: #d2cab4;
+  --brand: #1f5a43;
+  --brand-hover: #174632;
+  --brand-ink: #ffffff;
+  --tint: #e6efe8;
+  --tint-ink: #1f5a43;
+  --gold: #b3862f;
+  --gold-tint: #f6ebcb;
+  --danger: #a3262d;
+  --danger-tint: #fbebe8;
+  --warn-tint: #fdf2d4;
+  --warn-ink: #66460a;
+  --maple: #c0282d;
+  --shadow: 0 1px 2px rgb(28 36 32 / 0.05), 0 12px 28px -16px rgb(28 36 32 / 0.22);
+  --shadow-lg: 0 2px 4px rgb(28 36 32 / 0.05), 0 24px 48px -24px rgb(28 36 32 / 0.28);
+
+  /* chart colours: validated party palette on the card surface (see README) */
+  --viz-surface: #fffdf8;
+  --viz-grid: #ebe5d6;
+  --viz-axis: #cfc7b1;
+  --viz-text: #1c2420;
+  --viz-text-2: #56635b;
+  --viz-text-3: #77837c;
   --c-ndp: #eb6834;
   --c-conservative: #2a78d6;
   --c-bloc: #1baf7a;
@@ -30,12 +52,35 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --viz-surface: #1a1a19;
-    --viz-grid: #2e2e2c;
-    --viz-axis: #4a4a47;
-    --viz-text: #f0efec;
-    --viz-text-2: #c3c2b7;
-    --viz-text-3: #9a9990;
+    --paper: #0d1411;
+    --surface: #16201b;
+    --surface-2: #1a251f;
+    --ink: #ecebe3;
+    --muted: #a3b2a8;
+    --faint: #76867c;
+    --line: #26342c;
+    --line-strong: #364a3e;
+    --brand: #2b8562;
+    --brand-hover: #349b73;
+    --brand-ink: #ffffff;
+    --tint: #1c3227;
+    --tint-ink: #93d3b3;
+    --gold: #d5a84c;
+    --gold-tint: #3a2f12;
+    --danger: #f19393;
+    --danger-tint: #3b1b1d;
+    --warn-tint: #3a2f11;
+    --warn-ink: #f2d68c;
+    --maple: #e0555a;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 14px 30px -16px rgb(0 0 0 / 0.7);
+    --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.4), 0 26px 50px -24px rgb(0 0 0 / 0.8);
+
+    --viz-surface: #16201b;
+    --viz-grid: #2a3830;
+    --viz-axis: #4a5d51;
+    --viz-text: #ecebe3;
+    --viz-text-2: #a3b2a8;
+    --viz-text-3: #8a9a90;
     --c-ndp: #d95926;
     --c-conservative: #3987e5;
     --c-bloc: #199e70;
@@ -49,29 +94,127 @@
   }
 }
 
-body {
-  background: #f6f5f2;
-  color: #1c1b19;
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-reading: "Source Serif 4", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-linestrong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brandhover: var(--brand-hover);
+  --color-brandink: var(--brand-ink);
+  --color-tint: var(--tint);
+  --color-tintink: var(--tint-ink);
+  --color-gold: var(--gold);
+  --color-goldtint: var(--gold-tint);
+  --color-danger: var(--danger);
+  --color-dangertint: var(--danger-tint);
+  --color-warntint: var(--warn-tint);
+  --color-warnink: var(--warn-ink);
+  --color-maple: var(--maple);
+  --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lg);
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #121211;
-    color: #ecebe6;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background:
+    radial-gradient(900px 420px at 88% -8%, color-mix(in srgb, var(--brand) 11%, transparent), transparent 70%),
+    radial-gradient(700px 360px at -6% 6%, color-mix(in srgb, var(--gold) 9%, transparent), transparent 70%),
+    var(--paper);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 mark {
-  background: #fde68a;
+  background: var(--gold-tint);
   color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--gold) 55%, transparent);
 }
 
-@media (prefers-color-scheme: dark) {
-  mark {
-    background: #6b5a14;
+/* ---- motion: gentle, short, and off for people who ask for less ---- */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-up {
+  animation: fade-up 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+.fade-down {
+  animation: fade-down 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--line) 25%, var(--surface-2) 50%, var(--line) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.dot-pulse {
+  animation: pulse-dot 1.1s ease-in-out infinite;
 }
 
 .blink {
@@ -85,6 +228,13 @@ mark {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .fade-up,
+  .fade-down,
+  .skeleton,
+  .dot-pulse,
   .blink {
     animation: none;
   }

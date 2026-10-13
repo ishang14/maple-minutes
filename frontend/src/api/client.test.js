@@ -64,6 +64,18 @@ describe('streamAsk errors', () => {
     await expect(collect(streamAsk({ query: 'x' }))).rejects.toThrow(/at least 2 characters/)
   })
 
+  it('shows the rate-limit message from the server, including how long to wait (429)', async () => {
+    respond(429, { detail: 'You have asked a lot of questions in a short time. Please try again in 8 minutes.' })
+    const err = await collect(streamAsk({ query: 'carbon' })).catch((e) => e)
+    expect(err.status).toBe(429)
+    expect(err.message).toMatch(/try again in 8 minutes/)
+  })
+
+  it('falls back to a generic rate-limit message when the 429 has no body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', { status: 429 })))
+    await expect(collect(streamAsk({ query: 'carbon' }))).rejects.toThrow(/Too many requests/)
+  })
+
   it('gives a plain message when the index is not ready (503)', async () => {
     respond(503, { detail: 'whatever' })
     await expect(collect(streamAsk({ query: 'carbon' }))).rejects.toThrow(/not available/)

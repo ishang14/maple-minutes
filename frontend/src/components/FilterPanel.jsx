@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { getSpeakers } from '../api/client'
 import { useDebounced } from '../hooks/useDebounced'
-import { EMPTY_FILTERS } from '../lib/filters'
+import { EMPTY_FILTERS, normalizeBill } from '../lib/filters'
 import { DOMAIN_LABELS } from '../lib/parties'
 
 const inputCls =
-  'w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900'
+  'w-full rounded-lg border border-line bg-surface2 px-3 py-2 text-sm text-ink outline-none transition placeholder:text-faint focus:border-brand focus:bg-surface focus:ring-4 focus:ring-brand/15'
+const labelCls = 'mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted'
 
 /** MP name autocomplete: suggestions come from GET /filters/speakers, picking one sets the filter. */
 function SpeakerField({ value, onPick, fetchSpeakers = getSpeakers }) {
@@ -84,7 +85,7 @@ function SpeakerField({ value, onPick, fetchSpeakers = getSpeakers }) {
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-auto rounded-md border border-neutral-300 bg-white py-1 text-sm shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+          className="fade-down absolute z-20 mt-1.5 max-h-56 w-full overflow-auto rounded-xl border border-line bg-surface py-1.5 text-sm shadow-lift"
         >
           {options.map((name, i) => (
             <li
@@ -96,7 +97,7 @@ function SpeakerField({ value, onPick, fetchSpeakers = getSpeakers }) {
                 e.preventDefault()
                 choose(name)
               }}
-              className={`cursor-pointer px-2.5 py-1.5 ${i === active ? 'bg-red-100 dark:bg-red-950' : ''}`}
+              className={`cursor-pointer px-3 py-1.5 transition-colors ${i === active ? 'bg-tint text-tintink' : 'hover:bg-surface2'}`}
             >
               {name}
             </li>
@@ -113,14 +114,15 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
   const toggleDomain = (id) =>
     set({ domains: value.domains.includes(id) ? value.domains.filter((d) => d !== id) : [...value.domains, id] })
   const active = JSON.stringify(value) !== JSON.stringify(EMPTY_FILTERS)
+  const billInvalid = normalizeBill(value.bill) === null
 
   return (
-    <fieldset className="space-y-4">
+    <fieldset className="space-y-5">
       <legend className="sr-only">Filters</legend>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-3">
         <div>
-          <label htmlFor="date_from" className="mb-1 block text-xs font-medium">
+          <label htmlFor="date_from" className={labelCls}>
             From
           </label>
           <input
@@ -134,7 +136,7 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
           />
         </div>
         <div>
-          <label htmlFor="date_to" className="mb-1 block text-xs font-medium">
+          <label htmlFor="date_to" className={labelCls}>
             To
           </label>
           <input
@@ -150,7 +152,7 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
       </div>
 
       <div>
-        <label htmlFor="party" className="mb-1 block text-xs font-medium">
+        <label htmlFor="party" className={labelCls}>
           Party
         </label>
         <select id="party" value={value.party} onChange={(e) => set({ party: e.target.value })} className={inputCls}>
@@ -164,14 +166,14 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
       </div>
 
       <div>
-        <label htmlFor="speaker" className="mb-1 block text-xs font-medium">
+        <label htmlFor="speaker" className={labelCls}>
           Member of Parliament
         </label>
         <SpeakerField key={resetCount} value={value.speaker} onPick={(speaker) => set({ speaker })} fetchSpeakers={fetchSpeakers} />
       </div>
 
       <div>
-        <label htmlFor="parliament" className="mb-1 block text-xs font-medium">
+        <label htmlFor="parliament" className={labelCls}>
           Parliament
         </label>
         <select
@@ -189,18 +191,53 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
         </select>
       </div>
 
+      <div>
+        <label htmlFor="bill" className={labelCls}>
+          Bill
+        </label>
+        <input
+          id="bill"
+          value={value.bill}
+          list="bill-options"
+          placeholder="e.g. C-21"
+          autoComplete="off"
+          aria-invalid={billInvalid}
+          aria-describedby="bill-help"
+          className={`${inputCls} ${billInvalid ? 'border-danger' : ''}`}
+          onChange={(e) => set({ bill: e.target.value })}
+          onBlur={() => {
+            const canonical = normalizeBill(value.bill)
+            if (canonical && canonical !== value.bill) set({ bill: canonical })
+          }}
+        />
+        <datalist id="bill-options">
+          {(options?.bills ?? []).map((b) => (
+            <option key={b} value={b} />
+          ))}
+        </datalist>
+        {billInvalid ? (
+          <p id="bill-help" role="alert" className="mt-1.5 text-xs text-danger">
+            Use a bill number such as C-21 or S-3.
+          </p>
+        ) : (
+          <p id="bill-help" className="mt-1.5 text-xs text-faint">
+            Bill numbers restart each Parliament, so pair this with the Parliament filter.
+          </p>
+        )}
+      </div>
+
       <div role="group" aria-labelledby="topics-label">
-        <p id="topics-label" className="mb-1 text-xs font-medium">
+        <p id="topics-label" className={labelCls}>
           Topics
         </p>
         <div className="space-y-1.5">
           {Object.entries(DOMAIN_LABELS).map(([id, label]) => (
-            <label key={id} className="flex items-start gap-2 text-sm">
+            <label key={id} className="flex cursor-pointer items-start gap-2.5 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={value.domains.includes(id)}
                 onChange={() => toggleDomain(id)}
-                className="mt-0.5 accent-red-700"
+                className="mt-0.5 h-4 w-4 accent-brand"
               />
               <span>{options?.domains?.find((d) => d.id === id)?.label ?? label}</span>
             </label>
@@ -215,7 +252,7 @@ export default function FilterPanel({ options, value, onChange, fetchSpeakers })
           onChange(EMPTY_FILTERS)
         }}
         disabled={!active}
-        className="text-sm font-medium text-red-700 underline underline-offset-2 disabled:no-underline disabled:opacity-40 dark:text-red-400"
+        className="text-sm font-medium text-brand underline decoration-brand/40 underline-offset-4 transition hover:decoration-brand disabled:no-underline disabled:opacity-40"
       >
         Reset filters
       </button>

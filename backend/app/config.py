@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +22,19 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1:8b"
     allowed_origins: str = "http://localhost:5173"
+    # dense = vectors only (fast), sparse = BM25 only, hybrid = both fused with RRF (slower).
+    search_mode: Literal["dense", "sparse", "hybrid"] = "hybrid"
+    # Questions whose best match in the whole index is below this cosine similarity are not sent to
+    # the LLM ("nothing in the debates relates to this"). Calibrated with `python -m eval.calibrate_guard`
+    # for bge-small-en-v1.5; re-run it if EMBEDDING_MODEL changes. 0 turns the check off.
+    min_relevance: float = 0.65
+    # /ask rate limits protect the free LLM quota (0 turns a limit off): one per client IP, one for everyone.
+    ask_limit_per_ip: int = 12
+    ask_limit_window_seconds: int = 600
+    ask_limit_global: int = 240
+    ask_limit_global_window_seconds: int = 3600
+    # True behind a proxy that sets X-Forwarded-For (Hugging Face Spaces, Cloudflare); False when serving directly.
+    trust_proxy_headers: bool = False
     rerank_enabled: bool = True
     rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
     retrieve_candidates: int = 40     # hybrid search depth before reranking

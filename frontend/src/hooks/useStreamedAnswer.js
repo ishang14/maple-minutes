@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { streamAsk } from '../api/client'
 
-export const INITIAL = {
+const INITIAL = {
   status: 'idle', // idle | loading | streaming | done | error
   text: '',
   sources: [],
   cited: [],
   invalidCitations: [],
   unverifiedQuotes: [],
+  outOfScope: false, // nothing in the record relates to the question; the LLM was not asked
+  suggestions: [], // questions worth asking instead
   error: null,
 }
 
@@ -51,6 +53,8 @@ export function useStreamedAnswer(streamFn = streamAsk) {
               cited: data.cited ?? [],
               invalidCitations: data.invalid_citations ?? [],
               unverifiedQuotes: data.unverified_quotes ?? [],
+              outOfScope: Boolean(data.out_of_scope),
+              suggestions: data.suggestions ?? [],
             }))
           } else if (event === 'error') {
             setState((s) => ({ ...s, status: 'error', error: data.message }))

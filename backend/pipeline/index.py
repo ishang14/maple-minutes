@@ -26,6 +26,7 @@ from app.retrieval.vectorstore import (
     SPARSE,
     build_filter,
     ensure_collection,
+    has_sparse,
     make_payload,
     open_client,
     point_id,
@@ -52,10 +53,14 @@ def join_chunks_and_vectors(chunks: pd.DataFrame, ids: np.ndarray, vecs: np.ndar
 
 
 def index_chunks(client: QdrantClient, collection: str, chunks: pd.DataFrame, vecs: np.ndarray,
-                 sparse_fn: SparseFn, embedding_model: str, batch_size: int = 256,
+                 sparse_fn: SparseFn | None, embedding_model: str, batch_size: int = 256,
                  progress: bool = True) -> tuple[int, int]:
-    """Upsert all chunks. Returns (points written, points skipped as already present)."""
-    ensure_collection(client, collection, dim=vecs.shape[1])
+    """Upsert all chunks. Returns (points written, points skipped as already present).
+
+    With sparse_fn=None the collection holds dense vectors only: about half the memory and disk, enough for
+    SEARCH_MODE=dense (what the deployment uses), but not for keyword or hybrid search.
+    """
+    ensure_collection(client, collection, dim=vecs.shape[1], sparse=sparse_fn is not None)
     written = skipped = 0
     bar = tqdm(total=len(chunks), unit="chunk", desc="indexing", disable=not progress)
     for start in range(0, len(chunks), batch_size):
@@ -65,12 +70,15 @@ def index_chunks(client: QdrantClient, collection: str, chunks: pd.DataFrame, ve
             skipped += len(ids)
             bar.update(len(ids))
             continue
-        sparse = sparse_fn(batch["text"].tolist())
+        sparse = sparse_fn(batch["text"].tolist()) if sparse_fn else None
         points = [
             models.PointStruct(
                 id=pid,
-                vector={DENSE: vecs[start + j].tolist(),
-                        SPARSE: models.SparseVector(indices=sparse[j].indices, values=sparse[j].values)},
+                vector=(
+                    {DENSE: vecs[start + j].tolist()} if sparse is None else
+                    {DENSE: vecs[start + j].tolist(),
+                     SPARSE: models.SparseVector(indices=sparse[j].indices, values=sparse[j].values)}
+                ),
                 payload=make_payload(row, embedding_model),
             )
             for j, (pid, row) in enumerate(zip(ids, batch.to_dict("records"), strict=True))
@@ -82,9 +90,11 @@ def index_chunks(client: QdrantClient, collection: str, chunks: pd.DataFrame, ve
     return written, skipped
 
 
-def write_index_meta(qdrant_path: Path, collection: str, model: str, dim: int, count: int) -> None:
+def write_index_meta(qdrant_path: Path, collection: str, model: str, dim: int, count: int,
+                     sparse: bool = True) -> None:
     meta = {"collection": collection, "embedding_model": model, "dim": dim, "points": count,
-            "sparse_model": "Qdrant/bm25", "distance": "cosine"}
+            "sparse": sparse, "sparse_model": "Qdrant/bm25" if sparse else None,
+            "distance": "cosine"}
     (qdrant_path / "index_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
@@ -115,6 +125,8 @@ def main() -> None:
     ap.add_argument("--domains", help="comma-separated, e.g. finance_economy,law_security")
     ap.add_argument("--top-k", type=int, default=5)
     ap.add_argument("--qdrant-path", default=settings.qdrant_path)
+    ap.add_argument("--dense-only", action="store_true",
+                    help="build an index without BM25 vectors (about half the memory; for SEARCH_MODE=dense).\n                    Use a fresh --qdrant-path, e.g. data/qdrant_dense")
     args = ap.parse_args()
 
     qdrant_path = Path(args.qdrant_path)
@@ -133,11 +145,14 @@ def main() -> None:
 
         from app.retrieval.embedder import Embedder
 
+        if args.dense_only and client.collection_exists(settings.collection_name) and has_sparse(
+                client, settings.collection_name):
+            raise SystemExit(f"{qdrant_path} already holds a hybrid index; use a fresh --qdrant-path for --dense-only.")
         w, s = index_chunks(client, settings.collection_name, chunks, vecs,
-                            Embedder().sparse_documents, settings.embedding_model)
+                            None if args.dense_only else Embedder().sparse_documents, settings.embedding_model)
         total = client.count(settings.collection_name).count
         write_index_meta(qdrant_path, settings.collection_name, settings.embedding_model,
-                         vecs.shape[1], total)
+                         vecs.shape[1], total, sparse=not args.dense_only)
         print(f"indexed {w:,} new points ({s:,} already present); collection has {total:,}")
     finally:
         client.close()

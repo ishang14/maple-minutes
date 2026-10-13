@@ -144,3 +144,58 @@ def test_ensure_collection_is_idempotent(tmp_path):
     ensure_collection(client, COLLECTION, DIM)
     ensure_collection(client, COLLECTION, DIM)
     client.close()
+
+
+# --- dense-only indexes (smaller, for SEARCH_MODE=dense deployments) -------------------------------
+
+def test_dense_only_index_has_no_bm25_vectors_but_dense_search_works(tmp_path, chunks):
+    from app.retrieval.vectorstore import has_sparse
+
+    client = open_client(str(tmp_path / "dense_only"))
+    vecs = np.stack([toy_dense(t) for t in chunks["text"]])
+    written, _ = index_chunks(client, COLLECTION, chunks, vecs, None, "toy-model", batch_size=2, progress=False)
+    assert written == 4 and client.count(COLLECTION).count == 4
+    assert has_sparse(client, COLLECTION) is False
+    top = search(client, COLLECTION, toy_dense(chunks.text[1]).tolist(), None, None, 3, "dense")
+    assert top[0].payload["chunk_id"] == chunks.chunk_id[1]
+    with pytest.raises(ValueError, match="bm25 is not found"):  # keyword search needs BM25 vectors
+        search(client, COLLECTION, None, toy_sparse(["carbon tax"])[0], None, 3, "sparse")
+    client.close()
+
+
+def test_a_hybrid_index_reports_bm25_vectors(indexed):
+    from app.retrieval.vectorstore import has_sparse
+
+    client, *_ = indexed
+    assert has_sparse(client, COLLECTION) is True
+
+
+def test_dense_only_indexing_is_resumable_too(tmp_path, chunks):
+    client = open_client(str(tmp_path / "d2"))
+    vecs = np.stack([toy_dense(t) for t in chunks["text"]])
+    index_chunks(client, COLLECTION, chunks, vecs, None, "toy-model", batch_size=2, progress=False)
+    assert index_chunks(client, COLLECTION, chunks, vecs, None, "toy-model", batch_size=2, progress=False) == (0, 4)
+    client.close()
+
+
+def test_the_server_refuses_hybrid_mode_on_a_dense_only_index_with_a_clear_message(tmp_path, chunks):
+    from app.config import Settings
+    from app.deps import build_services
+
+    path = tmp_path / "served"
+    client = open_client(str(path))
+    vecs = np.stack([toy_dense(t) for t in chunks["text"]])
+    index_chunks(client, COLLECTION, chunks, vecs, None, "toy-model", batch_size=2, progress=False)
+    client.close()
+
+    def cfg(mode):
+        return Settings(_env_file=None, qdrant_path=str(path), collection_name=COLLECTION, search_mode=mode,
+                        rerank_enabled=False)
+
+    with pytest.raises(RuntimeError, match="dense-only.*SEARCH_MODE=dense"):
+        build_services(cfg("hybrid"))
+    services = build_services(cfg("dense"))  # the same index is fine in dense mode
+    try:
+        assert services.retriever.mode == "dense" and services.catalog.filters()["chunks"] == 4
+    finally:
+        services.close()

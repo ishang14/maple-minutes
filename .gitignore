@@ -1,5 +1,4 @@
 data/
-!backend/data/.gitkeep
 .env
 *.env.local
 .venv/

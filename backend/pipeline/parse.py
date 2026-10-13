@@ -18,9 +18,9 @@ from app.config import settings
 SITTING_URL = "https://www.ourcommons.ca/DocumentViewer/en/{parl}-{sess}/house/sitting-{n}/hansard"
 
 PARTIES = {
-    "Lib.": "Liberal", "CPC": "Conservative", "Con.": "Conservative", "NDP": "NDP",
+    "Lib.": "Liberal", "CPC": "Conservative", "NDP": "NDP",
     "BQ": "Bloc Québécois", "GP": "Green Party", "PPC": "People's Party",
-    "Ind.": "Independent", "CPC/PCC": "Conservative", "Ind. Con.": "Independent",
+    "Ind.": "Independent",
 }
 
 COLUMNS = [

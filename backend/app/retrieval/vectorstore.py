@@ -60,12 +60,19 @@ def make_payload(row: dict, embedding_model: str) -> dict:
     return payload
 
 
-def ensure_collection(client: QdrantClient, name: str, dim: int = DIM) -> None:
+def has_sparse(client: QdrantClient, name: str) -> bool:
+    """Does the collection carry BM25 vectors? A dense-only index (smaller, for deployment) does not."""
+    return bool(client.get_collection(name).config.params.sparse_vectors)
+
+
+def ensure_collection(client: QdrantClient, name: str, dim: int = DIM, sparse: bool = True) -> None:
     if not client.collection_exists(name):
         client.create_collection(
             name,
             vectors_config={DENSE: models.VectorParams(size=dim, distance=models.Distance.COSINE)},
-            sparse_vectors_config={SPARSE: models.SparseVectorParams(modifier=models.Modifier.IDF)},
+            sparse_vectors_config=(
+                {SPARSE: models.SparseVectorParams(modifier=models.Modifier.IDF)} if sparse else None
+            ),
         )
     # Local mode ignores payload indexes (filters still work, as scans), and warns about it. They
     # are declared anyway so the same collection definition is fast on a Qdrant server.

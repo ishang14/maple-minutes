@@ -17,7 +17,7 @@ from app.retrieval.catalog import Catalog
 from app.retrieval.embedder import Embedder
 from app.retrieval.hybrid import Retriever
 from app.retrieval.rerank import Reranker
-from app.retrieval.vectorstore import open_client
+from app.retrieval.vectorstore import has_sparse, open_client
 
 log = logging.getLogger("maple")
 
@@ -36,9 +36,15 @@ def build_services(cfg: Settings = settings) -> Services | None:
         log.warning("No index at %s; run `python -m pipeline.index`.", cfg.qdrant_path)
         return None
     client = open_client(cfg.qdrant_path)
+    if cfg.search_mode != "dense" and not has_sparse(client, cfg.collection_name):
+        client.close()
+        raise RuntimeError(
+            f"SEARCH_MODE={cfg.search_mode} needs BM25 vectors, but the index at {cfg.qdrant_path} is dense-only. "
+            "Set SEARCH_MODE=dense or rebuild without --dense-only.")
     catalog = Catalog.from_qdrant(client, cfg.collection_name)
     reranker = Reranker(cfg.rerank_model) if cfg.rerank_enabled else None
-    retriever = Retriever(client, cfg.collection_name, Embedder(), reranker, cfg.retrieve_candidates)
+    retriever = Retriever(client, cfg.collection_name, Embedder(), reranker, cfg.retrieve_candidates,
+                          cfg.search_mode)
     return Services(retriever, catalog, lambda: get_providers(cfg), client.close)
 
 
