@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/*
+  Chart colours. Party hues come from the reference categorical palette and were checked with the
+  palette validator (both modes pass; the aqua/red pair is in the CVD warning band, so every chart
+  also ships a legend, an all-series tooltip and a table view). Dark values are the same hues
+  stepped for the dark surface, not an automatic flip. Colours follow the entity (party/domain), so
+  filtering never repaints the series that remain.
+*/
+:root {
+  color-scheme: light;
+  --viz-surface: #fcfcfb;
+  --viz-grid: #e7e6e2;
+  --viz-axis: #c9c8c2;
+  --viz-text: #0b0b0b;
+  --viz-text-2: #52514e;
+  --viz-text-3: #74736d;
+  --c-ndp: #eb6834;
+  --c-conservative: #2a78d6;
+  --c-bloc: #1baf7a;
+  --c-liberal: #e34948;
+  --c-green: #008300;
+  --c-other: #8c8b85;
+  --c-finance: #2a78d6;
+  --c-law: #eb6834;
+  --c-foreign: #1baf7a;
+  --c-all: #2a78d6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --viz-surface: #1a1a19;
+    --viz-grid: #2e2e2c;
+    --viz-axis: #4a4a47;
+    --viz-text: #f0efec;
+    --viz-text-2: #c3c2b7;
+    --viz-text-3: #9a9990;
+    --c-ndp: #d95926;
+    --c-conservative: #3987e5;
+    --c-bloc: #199e70;
+    --c-liberal: #e66767;
+    --c-green: #008300;
+    --c-other: #9a9992;
+    --c-finance: #3987e5;
+    --c-law: #d95926;
+    --c-foreign: #199e70;
+    --c-all: #3987e5;
+  }
+}
+
+body {
+  background: #f6f5f2;
+  color: #1c1b19;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #121211;
+    color: #ecebe6;
+  }
+}
+
+mark {
+  background: #fde68a;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  mark {
+    background: #6b5a14;
+  }
+}
+
+.blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink {
+    animation: none;
+  }
+}

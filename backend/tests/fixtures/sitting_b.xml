@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Hansard xml:lang="EN" id="1">
+  <ExtractedInformation>
+    <ExtractedItem Name="MetaDateNumDay">3</ExtractedItem>
+    <ExtractedItem Name="MetaDateNumMonth">11</ExtractedItem>
+    <ExtractedItem Name="MetaDateNumYear">2022</ExtractedItem>
+    <ExtractedItem Name="MetaNumberNumber">002</ExtractedItem>
+    <ExtractedItem Name="SessionNumber">1</ExtractedItem>
+    <ExtractedItem Name="ParliamentNumber">44</ExtractedItem>
+  </ExtractedInformation>
+  <HansardBody>
+    <OrderOfBusiness id="20" Rubric="OralQuestionPeriod">
+      <OrderOfBusinessTitle>Oral Questions</OrderOfBusinessTitle>
+      <SubjectOfBusiness id="21">
+        <SubjectOfBusinessTitle>Taxation</SubjectOfBusinessTitle>
+        <SubjectOfBusinessContent>
+          <Intervention Type="Question" ToC="Yes" id="200">
+            <PersonSpeaking><Affiliation DbId="8" Type="9">Hon. Pierre Poilievre (Leader of the Opposition, CPC)</Affiliation>: </PersonSpeaking>
+            <Content><ParaText id="4">Will the Prime Minister cancel the tax?</ParaText></Content>
+          </Intervention>
+          <Intervention Type="Debate" ToC="No" id="201">
+            <PersonSpeaking><Affiliation DbId="9" Type="92">The Assistant Deputy Speaker (Mrs. Carol Hughes)</Affiliation></PersonSpeaking>
+            <Content><ParaText id="5">The hon. member's time is up.</ParaText></Content>
+          </Intervention>
+          <Intervention Type="Debate" ToC="No" id="202">
+            <PersonSpeaking><Affiliation DbId="10" Type="1">The Speaker</Affiliation></PersonSpeaking>
+            <Content><ParaText id="6">Order.</ParaText></Content>
+          </Intervention>
+        </SubjectOfBusinessContent>
+      </SubjectOfBusiness>
+    </OrderOfBusiness>
+  </HansardBody>
+</Hansard>

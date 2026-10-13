@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Hansard xml:lang="EN" id="1">
+  <ExtractedInformation>
+    <ExtractedItem Name="MetaDateNumDay">10</ExtractedItem>
+    <ExtractedItem Name="MetaDateNumMonth">6</ExtractedItem>
+    <ExtractedItem Name="MetaDateNumYear">2025</ExtractedItem>
+    <ExtractedItem Name="MetaNumberNumber">003</ExtractedItem>
+    <ExtractedItem Name="SessionNumber">1</ExtractedItem>
+    <ExtractedItem Name="ParliamentNumber">45</ExtractedItem>
+  </ExtractedInformation>
+  <HansardBody>
+    <OrderOfBusiness id="30" Rubric="Other">
+      <OrderOfBusinessTitle>Government Orders</OrderOfBusinessTitle>
+      <SubjectOfBusiness id="31">
+        <SubjectOfBusinessTitle>Cost of Living Relief Act, No. 2</SubjectOfBusinessTitle>
+        <SubjectOfBusinessContent>
+          <Intervention Type="Debate" ToC="Yes" id="300">
+            <PersonSpeaking><Affiliation DbId="7" Type="2">Hon. Jean-Yves Duclos (Québec, Lib.)</Affiliation>: </PersonSpeaking>
+            <Content><ParaText id="7">A speech with no bill reference.</ParaText></Content>
+          </Intervention>
+          <Intervention Type="Debate" ToC="No" id="301"><PersonSpeaking><Affiliation DbId="11" Type="2">Mr. Empty (X, NDP)</Affiliation>: </PersonSpeaking><Content/></Intervention>
+        </SubjectOfBusinessContent>
+      </SubjectOfBusiness>
+    </OrderOfBusiness>
+  </HansardBody>
+</Hansard>

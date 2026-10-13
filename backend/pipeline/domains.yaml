@@ -1,0 +1,391 @@
+# Keyword/phrase rules for tagging debate HEADINGS (and bill titles) with subject domains.
+# Matching is case-insensitive on whole words. A trailing * means "any word ending"
+# (e.g. "sanction*" matches sanction, sanctions, sanctioned). A heading may match several domains.
+# Edit freely; re-run `python -m pipeline.tag_domains` (cheap) to regenerate the report.
+
+# Procedural headings carry no topic. They are never tagged from their own words, and are
+# ignored when working out what a bill is called.
+generic_headings:
+  - Business of Supply
+  - Government Orders
+  - Privilege
+  - Committees of the House
+  - Adjournment Proceedings
+  - Routine Proceedings
+  - Points of Order
+  - Point of Order
+  - Business of the House
+  - Resumption of Debate on Address in Reply
+  - Address in Reply
+  - Questions on the Order Paper
+  - Questions Passed as Orders for Returns
+  - Petitions
+  - Royal Assent
+  - Oral Questions
+  - Statements by Members
+  - Private Members' Business
+  - Motions
+  - Interparliamentary Delegations
+  - Presenting Reports from Interparliamentary Delegations
+  - Introduction of Government Bills
+  - Introduction of Private Members' Bills
+  - Government Business
+  - Suspension of Sitting
+  - Message from the Senate
+  - Message from the Governor General
+  - Opening of Parliament
+  - Election of Speaker
+  - Statement by the Speaker
+  - Tributes
+  - Business of Supply Opposition Motion
+
+# Debate-block scoring for chunks under procedural headings. A domain is assigned to the block
+# when the pooled text has at least min_hits phrase matches, at least min_distinct different
+# phrases, and at least min_hits_per_1k_words matches per 1000 words.
+block_tagging:
+  min_hits: 20
+  min_distinct: 8
+  min_hits_per_1k_words: 8
+  # Procedural headings that bundle unrelated items (petitions on many topics, several Late Show
+  # questions, ...). Their chunks are not block-tagged, so they stay `other`.
+  exclude_headings:
+    - Routine Proceedings
+    - Petitions
+    - Points of Order
+    - Point of Order
+    - Adjournment Proceedings
+    - Business of the House
+    - Questions on the Order Paper
+    - Questions Passed as Orders for Returns
+    - Interparliamentary Delegations
+    - Presenting Reports from Interparliamentary Delegations
+    - Introduction of Government Bills
+    - Introduction of Private Members' Bills
+    - Message from the Senate
+    - Message from the Governor General
+    - Royal Assent
+    - Statement by the Speaker
+    - Tributes
+    - Statements by Members
+
+domains:
+  law_security:
+    label: "Law, justice and national security"
+    phrases:
+      - criminal
+      - crime*
+      - justice
+      - judge*
+      - judicial
+      - judiciary
+      - court*
+      - sentenc*
+      - bail
+      - firearm*
+      - gun*
+      - handgun*
+      - police
+      - policing
+      - RCMP
+      - CSIS
+      - public safety
+      - national security
+      - national defence
+      - defence
+      - armed forces
+      - canadian forces
+      - military
+      - NORAD
+      - veterans' benefits   # kept narrow: veterans affairs is not law/security
+      - terror*
+      - extremis*
+      - hate
+      - emergencies act
+      - emergency measures
+      - criminal code
+      - charter of rights
+      - charter
+      - human rights
+      - correctional
+      - corrections
+      - prison*
+      - penitentiar*
+      - parole
+      - inmate*
+      - victim*
+      - wrongful conviction*
+      - miscarriage* of justice
+      - intelligence
+      - surveillance
+      - foreign interference
+      - interference
+      - organized crime
+      - money laundering
+      - human trafficking
+      - trafficking
+      - drug*
+      - decriminali*
+      - online harms
+      - cyber*
+      - lawful access
+      - public inquir*
+      - inquiry
+      - sexual assault
+      - sexual violence
+      - gender-based violence
+      - intimate partner violence
+      - domestic violence
+      - coercive control
+      - border security
+      - strong borders
+      - border*
+      - smuggling
+      - auto theft
+      - car theft
+      - carjacking
+      - extortion
+      - violent offender*
+      - repeat offender*
+      - law enforcement
+      - crown prosecut*
+      - public prosecut*
+      - legal aid
+      - access to justice
+      - supreme court
+      - judges act
+      - national security and intelligence
+
+  foreign_relations:
+    label: "Foreign relations and international cooperation"
+    phrases:
+      - foreign affairs
+      - foreign policy
+      - foreign interference
+      - foreign aid
+      - foreign investment
+      - international
+      - global affairs
+      - diplomat*
+      - embass*
+      - consulate*
+      - NATO
+      - united nations
+      - UN
+      - G7
+      - G20
+      - commonwealth
+      - francophonie
+      - sanction*
+      - magnitsky
+      - trade agreement*
+      - free trade
+      - trade deal*
+      - CUSMA
+      - CETA
+      - CPTPP
+      - trans-pacific
+      - tariff*
+      - softwood lumber
+      - supply management   # a recurring trade-negotiation topic
+      - development assistance
+      - peacekeep*
+      - WTO
+      - world trade organization
+      - world health organization
+      - interparliamentary
+      - indo-pacific
+      - middle east
+      - africa
+      - europe
+      - european union
+      - asia
+      - latin america
+      - caribbean
+      - hong kong
+      - taiwan
+      - gaza
+      - palestin*
+      - uyghur*
+      - genocide
+      - invasion
+      - refugee resettlement
+      - war in
+      - ambassador*
+      - multilateral*
+      - bilateral*
+      - arms export*
+      - arms trade
+      - consular
+      - united states
+      - U.S.
+      - mexico
+      - china
+      - chinese
+      - india
+      - indian
+      - ukraine
+      - ukrainian
+      - russia
+      - russian
+      - israel
+      - iran
+      - iraq
+      - syria
+      - türkiye
+      - saudi arabia
+      - qatar
+      - lebanon
+      - yemen
+      - egypt
+      - afghanistan
+      - pakistan
+      - bangladesh
+      - sri lanka
+      - nepal
+      - myanmar
+      - philippines
+      - indonesia
+      - vietnam
+      - thailand
+      - japan
+      - korea
+      - north korea
+      - south korea
+      - australia
+      - new zealand
+      - singapore
+      - malaysia
+      - united kingdom
+      - britain
+      - france
+      - germany
+      - italy
+      - poland
+      - belarus
+      - hungary
+      - ireland
+      - spain
+      - portugal
+      - sweden
+      - finland
+      - norway
+      - denmark
+      - greenland
+      - netherlands
+      - switzerland
+      - belgium
+      - brazil
+      - argentina
+      - chile
+      - colombia
+      - peru
+      - venezuela
+      - cuba
+      - haiti
+      - guatemala
+      - honduras
+      - nicaragua
+      - jamaica
+      - ethiopia
+      - eritrea
+      - sudan
+      - south sudan
+      - somalia
+      - kenya
+      - nigeria
+      - ghana
+      - rwanda
+      - congo
+      - south africa
+      - zimbabwe
+      - morocco
+      - algeria
+      - tunisia
+      - libya
+      - cameroon
+      - armenia
+      - azerbaijan
+
+  finance_economy:
+    label: "Finance, economy and taxation"
+    phrases:
+      - economy
+      - economic
+      - economics
+      - budget*
+      - fiscal
+      - finance
+      - financial
+      - tax*
+      - income tax
+      - GST
+      - HST
+      - carbon pricing
+      - carbon tax
+      - carbon price
+      - price on pollution
+      - inflation
+      - cost of living
+      - affordab*
+      - interest rate*
+      - bank of canada
+      - deficit
+      - debt
+      - spending
+      - estimates
+      - economic update
+      - economic statement
+      - employment insurance
+      - jobs
+      - employment
+      - unemployment
+      - labour market
+      - wages
+      - minimum wage
+      - pension*
+      - canada pension plan
+      - mortgage*
+      - bank
+      - banks
+      - banking
+      - insurance
+      - investment*
+      - small business*
+      - small and medium
+      - industry
+      - industries
+      - manufactur*
+      - trade
+      - treasury board
+      - public accounts
+      - parliamentary budget officer
+      - canada revenue agency
+      - customs
+      - excise
+      - duties
+      - subsid*
+      - grocer*
+      - food prices
+      - gas prices
+      - supply chain*
+      - productivity
+      - competition
+      - capital gains
+      - stimulus
+      - wage subsidy
+      - emergency response benefit
+      - CERB
+      - CEBA
+      - cost-of-living
+      - consumer*
+      - infrastructure bank
+      - canada child benefit
+      - oil and gas
+      - energy sector
+      - dividend*
+      - revenue
+      - crown corporation*
+      - cryptocurrenc*
+      - fintech
+      - open banking
+      - housing affordability
